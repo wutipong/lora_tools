@@ -9,9 +9,6 @@ import numpy as np
 import shutil
 import torch
 
-global main_dir
-config_dir = ''
-
 
 def image_to_tensor(img: np.ndarray) -> torch.Tensor:
     img = img.astype(np.float32) / 255.0
