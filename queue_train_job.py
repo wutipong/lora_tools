@@ -30,7 +30,7 @@ def cli(project):
 
     slurm = Slurm(
         gres=['gpu:1'],
-        job_name=f'train sdxl - {project}',
+        job_name=f'train-sdxl-{project}',
     )
 
     slurm.add_cmd('source', f'{Path.cwd()}/venv/bin/activate')
@@ -40,7 +40,7 @@ def cli(project):
                  f'--num_cpu_threads_per_process=1',
                  f'{Path.cwd()}/sd-scripts/sdxl_train_network.py',
                  f'--dataset_config={project_path}/dataset_config.toml',
-                 f'--config_file{project_path}/training_config.toml'
+                 f'--config_file={project_path}/training_config.toml'
                  )
 
 
