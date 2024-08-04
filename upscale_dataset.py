@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from spandrel import ImageModelDescriptor, ModelLoader
 from tqdm import tqdm
@@ -46,7 +47,7 @@ def project_dir_prepare(project_path):
 
     elif not input_dir_path.exists:
         logging.error("'orig' directory not found. Abort.")
-        return
+        raise Exception("'orig' directory not found.")
 
     if not output_dir_path.exists():
         output_dir_path.mkdir()
@@ -100,6 +101,41 @@ def perform_resize_model(model_path, project_path):
         del model
 
 
+def perform_resample(project_path, scale, method):
+    input_dir_path, output_dir_path = project_dir_prepare(project_path)
+
+    paths = [p for p in input_dir_path.iterdir()]
+
+    for input_path in (pbar := tqdm(paths)):
+        try:
+            rel = input_path.relative_to(project_path)
+            output_path = output_dir_path / rel
+
+            if input_path.is_dir():
+                output_path.mkdir()
+
+                continue
+
+            pbar.set_description(str(rel))
+
+            img = cv2.imread(str(input_path), cv2.IMREAD_UNCHANGED)
+            if img is None:
+                continue
+
+            h, w = img.shape[:2]
+            h = math.floor(h * scale)
+            w = math.floor(w * scale)
+
+            out = cv2.resize(img, (w, h), interpolation=method)
+            cv2.imwrite(str(output_path), out)
+
+        except Exception as e:
+            logging.error(f'error occured ({input_path}): {e}')
+            continue
+
+    logging.info("dataset resampling complete.")
+
+
 @click.group()
 def cli():
     """Upscale dataset tool"""
@@ -138,6 +174,42 @@ def use_model(model, project):
         return
 
     perform_resize_model(model_path, project_path)
+
+
+@cli.command()
+@click.option('--scale', required=True, type=click.FloatRange(0, 100.0, min_open=False, clamp=True))
+@click.option('--method', default='lanczos', type=click.Choice(['nearest', 'bilinear', 'bicubic', 'inter-area', 'lanczos', 'linear-exact', 'nearest-exact'], case_sensitive=False), )
+@click.argument('project')
+def resample(scale, method, project):
+    """Resize dataset images using resample algorithm."""
+
+    method_value = cv2.INTER_LANCZOS4
+
+    match method:
+        case 'nearest':
+            method_value = cv2.INTER_NEAREST
+        case 'bilinear':
+            method_value = cv2.INTER_LINEAR
+        case 'bicubic':
+            method_value = cv2.INTER_CUBIC
+        case 'inter-area':
+            method_value = cv2.INTER_AREA
+        case 'lanczos':
+            method_value = cv2.INTER_LANCZOS4
+        case 'linear-exact':
+            method_value = cv2.INTER_LINEAR_EXACT
+        case 'nearest-exact':
+            method_value = cv2.INTER_NEAREST_EXACT
+
+    logging.info(f'Use method: {method}')
+
+    project_path = Path.cwd() / "workspace" / project
+
+    if not project_path.exists() or project_path.is_file():
+        logging.error(f"Unable to find project directory: {project_path}")
+        return
+
+    perform_resample(project_path, scale, method_value)
 
 
 if __name__ == "__main__":
