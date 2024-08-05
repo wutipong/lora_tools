@@ -11,7 +11,6 @@ def cli(project):
     """Queue training job."""
 
     project_path = Path.cwd() / "workspace" / project
-    dataset_path = project_path / "dataset"
 
     if not project_path.exists() or project_path.is_file():
         logging.error(f"Unable to find project directory: {project_path}")
@@ -31,17 +30,21 @@ def cli(project):
     slurm = Slurm(
         gres=['gpu:1'],
         job_name=f'train-sdxl-{project}',
+        output=f'{
+            Path.cwd()}/logs/{Slurm.JOB_ARRAY_MASTER_ID}_{Slurm.JOB_ARRAY_ID}.out',
     )
 
     slurm.add_cmd('source', f'{Path.cwd()}/venv/bin/activate')
 
-    slurm.sbatch('accelerate', 'launch', '--quiet',
-                 f'--config_file={Path.cwd()}/accelerate_config.yaml',
-                 f'--num_cpu_threads_per_process=1',
-                 f'{Path.cwd()}/sd-scripts/sdxl_train_network.py',
-                 f'--dataset_config={project_path}/dataset_config.toml',
-                 f'--config_file={project_path}/training_config.toml'
-                 )
+    slurm.add_cmd('accelerate', 'launch', '--quiet',
+                  f'--config_file={Path.cwd()}/accelerate_config.yaml',
+                  f'--num_cpu_threads_per_process=1',
+                  f'{Path.cwd()}/sd-scripts/sdxl_train_network.py',
+                  f'--dataset_config={project_path}/dataset_config.toml',
+                  f'--config_file={project_path}/training_config.toml'
+                  )
+
+    slurm.sbatch()
 
 
 if __name__ == "__main__":
