@@ -1,6 +1,5 @@
 import click
 from pathlib import Path
-import logging
 import subprocess
 
 
@@ -14,13 +13,15 @@ def cli(model, project):
     dataset_path = project_path / "dataset"
 
     if not project_path.exists() or project_path.is_file():
-        logging.error(f"Unable to find project directory: {project_path}")
+        click.secho(f"Unable to find project directory: {
+                    project_path}", fg='red')
         return
 
     dataset_path = project_path / "dataset"
 
     if not dataset_path.exists() or dataset_path.is_file():
-        logging.error(f"Unable to find dataset directory: {dataset_path}")
+        click.secho(f"Unable to find dataset directory: {
+                    dataset_path}", fg='red')
         return
 
     script_dir = Path.cwd() / "sd-scripts"

@@ -2,7 +2,6 @@ from environs import Env
 from pathlib import Path
 from simple_slurm import Slurm
 import click
-import logging
 
 
 @click.command()
@@ -14,18 +13,20 @@ def cli(dump, project):
     project_path = Path.cwd() / "workspace" / project
 
     if not project_path.exists() or project_path.is_file():
-        logging.error(f"Unable to find project directory: {project_path}")
+        click.secho(f"Unable to find project directory: {
+                    project_path}", fg='red')
         return
 
     dataset_config_path = project_path / "dataset_config.toml"
     training_config_path = project_path / "training_config.toml"
 
     if not dataset_config_path.exists():
-        logging.error(f"Unable to dataset_config.toml: {project_path}")
+        click.secho(f"Unable to dataset_config.toml: {project_path}", fg='red')
         return
 
     if not training_config_path.exists():
-        logging.error(f"Unable to training_config.toml: {project_path}")
+        click.secho(f"Unable to training_config.toml: {
+                    project_path}", fg='red')
         return
 
     slurm = Slurm(
@@ -54,7 +55,7 @@ def cli(dump, project):
             slurm.add_cmd(
                 'cp', '-uf', f'{project_path}/output/{project}.safetensors', path)
     except:
-        click.echo('No ouput path specified. Skipped.')
+        click.secho('No ouput path specified. Skipped.', fg='red')
 
     if dump:
         click.echo(slurm)

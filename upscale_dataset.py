@@ -4,7 +4,6 @@ from spandrel import ImageModelDescriptor, ModelLoader
 from tqdm import tqdm
 import click
 import cv2
-import logging
 import numpy as np
 import shutil
 import torch
@@ -37,13 +36,14 @@ def project_dir_prepare(project_path):
     output_dir_path = project_path / "dataset"
 
     if not input_dir_path.exists() and output_dir_path.exists():
-        logging.warning(
-            "'orig' path does not exists, but 'dataset' exists. Renaming 'dataset' to 'orig'."
+        click.secho(
+            "'orig' path does not exists, but 'dataset' exists. Renaming 'dataset' to 'orig'.",
+            fg='yellow'
         )
         shutil.move(output_dir_path, input_dir_path)
 
     elif not input_dir_path.exists:
-        logging.error("'orig' directory not found. Abort.")
+        click.echo("'orig' directory not found. Abort.")
         raise Exception("'orig' directory not found.")
 
     if not output_dir_path.exists():
@@ -59,7 +59,7 @@ def perform_resize_model(model_path, project_path):
     )
 
     if not isinstance(model, ImageModelDescriptor):
-        logging.error("invalid model")
+        click.secho("invalid model", fg='red')
         return
 
     model.cuda()
@@ -93,7 +93,7 @@ def perform_resize_model(model_path, project_path):
 
             del img, img_tensor, out_tensor, out
     finally:
-        logging.info("image upscale complete.")
+        click.secho("image upscale complete.", fg='green')
         torch.cuda.empty_cache()
         del model
 
@@ -127,10 +127,10 @@ def perform_resample(project_path, scale, method):
             cv2.imwrite(str(output_path), out)
 
         except Exception as e:
-            logging.error(f'error occured ({input_path}): {e}')
+            click.echo(f'error occured ({input_path}): {e}')
             continue
 
-    logging.info("dataset resampling complete.")
+    click.secho("dataset resampling complete.", fg='green')
 
 
 @click.group()
@@ -148,7 +148,7 @@ def list_model():
         rel = i.relative_to(model_path)
         if rel.suffix != '.pth' and rel.suffix != '.safetensor':
             continue
-        print(rel)
+        click.echo(rel)
 
 
 @cli.command()
@@ -159,15 +159,15 @@ def use_model(model, project):
     model_path = Path.cwd() / "models/upscale" / model
 
     if not model_path.exists() or not model_path.is_file():
-        logging.error(f"Unable to load model: {model_path}")
+        click.echo(f"Unable to load model: {model_path}")
         return
 
-    logging.info(f'Use Model: {model_path}')
+    click.echo(f'Use Model: {model_path}')
 
     project_path = Path.cwd() / "workspace" / project
 
     if not project_path.exists() or project_path.is_file():
-        logging.error(f"Unable to find project directory: {project_path}")
+        click.echo(f"Unable to find project directory: {project_path}")
         return
 
     perform_resize_model(model_path, project_path)
@@ -198,12 +198,12 @@ def resample(scale, method, project):
         case 'nearest-exact':
             method_value = cv2.INTER_NEAREST_EXACT
 
-    logging.info(f'Use method: {method}')
+    click.echo(f'Use method: {method}')
 
     project_path = Path.cwd() / "workspace" / project
 
     if not project_path.exists() or project_path.is_file():
-        logging.error(f"Unable to find project directory: {project_path}")
+        click.echo(f"Unable to find project directory: {project_path}")
         return
 
     perform_resample(project_path, scale, method_value)

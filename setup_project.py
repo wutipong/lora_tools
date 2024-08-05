@@ -1,8 +1,7 @@
-import click
 from pathlib import Path
-import logging
-import mimetypes
+import click
 import cv2
+import mimetypes
 
 TRAINING_BATCH_SIZE = 2
 MAX_TRAINING_EPOCH = 10
@@ -20,13 +19,13 @@ def cli(project):
     dataset_path = project_path / "dataset"
 
     if not project_path.exists() or project_path.is_file():
-        logging.error(f"Unable to find project directory: {project_path}")
+        click.secho(f"Unable to find project directory: {project_path}", fg='red')
         return
 
     dataset_path = project_path / "dataset"
 
     if not dataset_path.exists() or dataset_path.is_file():
-        logging.error(f"Unable to find dataset directory: {dataset_path}")
+        click.secho(f"Unable to find dataset directory: {dataset_path}", fg='red')
         return
 
     paths = [p for p in dataset_path.iterdir() if p.is_file()]
@@ -36,7 +35,7 @@ def cli(project):
         if cv2.haveImageReader(str(path)):
             count = count + 1
 
-    print(f"found {count} images.")
+    click.echo(f"found {count} images.")
 
     repeats = click.prompt(
         'Enter the number of repeats. Images multiplied by their repeats should be between 200 and 400', type=int)
