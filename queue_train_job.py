@@ -2,6 +2,7 @@ from environs import Env
 from pathlib import Path
 from simple_slurm import Slurm
 import click
+import stringcase
 
 
 @click.command()
@@ -33,7 +34,7 @@ def cli(dump, project):
         gres=['gpu:1'],
         job_name=f'train-sdxl-{project}',
         output=f'{
-            Path.cwd()}/logs/{Slurm.JOB_ARRAY_MASTER_ID}_{Slurm.JOB_ARRAY_ID}.out',
+            Path.cwd()}/logs/{Slurm.JOB_ARRAY_MASTER_ID}_{stringcase.spinalcase(project)}_{Slurm.JOB_ARRAY_ID}.out',
     )
 
     slurm.add_cmd('source', f'{Path.cwd()}/venv/bin/activate')

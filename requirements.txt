@@ -6,3 +6,4 @@ onnx==1.16.2
 onnxruntime==1.18.1
 onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 environs==11.0.0
+stringcase==1.2.0
