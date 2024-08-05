@@ -52,7 +52,7 @@ def cli(dump, project):
 
         for path in lora_output_paths:
             slurm.add_cmd(
-                'cp', '-rf', f'{project_path}/output/{project}.safetensors', path)
+                'cp', '-uf', f'{project_path}/output/{project}.safetensors', path)
     except:
         click.echo('No ouput path specified. Skipped.')
 
