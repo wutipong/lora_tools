@@ -4,6 +4,10 @@ import logging
 import mimetypes
 import cv2
 
+TRAINING_BATCH_SIZE = 2
+MAX_TRAINING_EPOCH = 10
+LR_WARMUP_RATIO = 0.05
+
 
 @click.command()
 @click.argument('project')
@@ -36,6 +40,11 @@ def cli(project):
 
     repeats = click.prompt(
         'Enter the number of repeats. Images multiplied by their repeats should be between 200 and 400', type=int)
+
+    pre_steps_per_epoch = count * repeats
+    steps_per_epoch = pre_steps_per_epoch/TRAINING_BATCH_SIZE
+    total_steps = int(MAX_TRAINING_EPOCH*steps_per_epoch)
+    lr_warmup_steps = int(total_steps*LR_WARMUP_RATIO)
 
     dataset_config_path = project_path / "dataset_config.toml"
     dataset_config = open(dataset_config_path, "w")
@@ -77,15 +86,15 @@ network_train_unet_only = false
 learning_rate = 0.75
 lr_scheduler = "cosine_with_restarts"
 lr_scheduler_num_cycles = 3
-lr_warmup_steps = 56
+lr_warmup_steps = {lr_warmup_steps}
 optimizer_type = "Prodigy"
 optimizer_args = [ "weight_decay=0.1", "betas=[0.9,0.99]",]
 
 [training_arguments]
 pretrained_model_name_or_path = "hollowstrawberry/67AB2F"
 vae = "stabilityai/sdxl-vae"
-max_train_epochs = 10
-train_batch_size = 2
+max_train_epochs = {MAX_TRAINING_EPOCH}
+train_batch_size = {TRAINING_BATCH_SIZE}
 seed = 42
 max_token_length = 225
 xformers = false
@@ -114,10 +123,10 @@ save_model_as = "safetensors"
 save_every_n_epochs = 1
 save_last_n_epochs = 10
 output_name = "{project}"
-output_dir = "{project_path/ "output"}"
+output_dir = "{project_path}/output"
 log_prefix = "{project}"
-logging_dir = "{project_path/ "logs"}"
-    """)
+logging_dir = "{project_path}/logs"
+""")
 
     dataset_config.close()
 
