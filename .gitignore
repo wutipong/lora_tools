@@ -1,8 +1,7 @@
 venv
 .envrc
 workspace/*
-!workspace/put_project_dir_here
 models/upscale/*
-!models/upscale/put_upscale_model_here
 models/tagger/*
-!models/tagger/put_tagger_model_here
+logs/*
+!**/.non_empty
