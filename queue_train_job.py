@@ -1,13 +1,14 @@
-import click
+from environs import Env
 from pathlib import Path
-import logging
-import cv2
 from simple_slurm import Slurm
+import click
+import logging
 
 
 @click.command()
+@click.option('--dump', is_flag=True, help='Dump Slurm command.')
 @click.argument('project')
-def cli(project):
+def cli(dump, project):
     """Queue training job."""
 
     project_path = Path.cwd() / "workspace" / project
@@ -44,7 +45,21 @@ def cli(project):
                   f'--config_file={project_path}/training_config.toml'
                   )
 
-    slurm.sbatch()
+    env = Env()
+
+    try:
+        lora_output_paths = env.list('LORA_TOOL_OUTPUT_PATHS')
+
+        for path in lora_output_paths:
+            slurm.add_cmd(
+                'cp', f'{project_path}/output/{project}.safetensors', path)
+    except:
+        click.echo('No ouput path specified. Skipped.')
+
+    if dump:   
+        click.echo(slurm)
+    else:
+        slurm.sbatch()
 
 
 if __name__ == "__main__":
