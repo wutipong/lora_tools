@@ -17,7 +17,7 @@ def cli(project):
     mimetypes.init()
 
     project_path = Path.cwd() / "workspace" / project
-    dataset_path = project_path / "dataset"
+    queue_project_path = Path.cwd() / "queue" / project
 
     if not project_path.exists() or project_path.is_file():
         click.secho(f"Unable to find project directory: {project_path}", fg='red')
@@ -46,6 +46,7 @@ def cli(project):
     total_steps = int(MAX_TRAINING_EPOCH*steps_per_epoch)
     lr_warmup_steps = int(total_steps*LR_WARMUP_RATIO)
 
+    queue_dataset_path = queue_project_path / "dataset"
     dataset_config_path = project_path / "dataset_config.toml"
     dataset_config = open(dataset_config_path, "w")
     dataset_config.write(
@@ -53,7 +54,7 @@ def cli(project):
 
 [[datasets.subsets]]
 num_repeats = {repeats}
-image_dir = "{dataset_path}"
+image_dir = "{queue_dataset_path}"
 
 [general]
 resolution = 1024
@@ -123,14 +124,12 @@ save_model_as = "safetensors"
 save_every_n_epochs = 1
 save_last_n_epochs = 10
 output_name = "{project}"
-output_dir = "{project_path}/output"
+output_dir = "{queue_project_path}/output"
 log_prefix = "{project}"
-logging_dir = "{project_path}/logs"
+logging_dir = "{queue_project_path}/logs"
 """)
 
     dataset_config.close()
-
-    queue_project_path = Path.cwd() / "queue" / project
 
     shutil.move(project_path, queue_project_path)
 
