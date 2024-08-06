@@ -7,61 +7,66 @@ import stringcase
 
 @click.command()
 @click.option('--dump', is_flag=True, help='Dump Slurm command.')
-@click.argument('project')
-def cli(dump, project):
+def cli(dump):
     """Queue training job."""
 
-    project_path = Path.cwd() / "workspace" / project
+    queue_path = Path.cwd() / "queue"
 
-    if not project_path.exists() or project_path.is_file():
-        click.secho(f"Unable to find project directory: {
-                    project_path}", fg='red')
-        return
+    for project_path in queue_path.iterdir():
+        project = project_path.name
 
-    dataset_config_path = project_path / "dataset_config.toml"
-    training_config_path = project_path / "training_config.toml"
+        if project.startswith('.'):
+            continue
 
-    if not dataset_config_path.exists():
-        click.secho(f"Unable to dataset_config.toml: {project_path}", fg='red')
-        return
+        click.secho(f'Processing: {project}', fg='green')
 
-    if not training_config_path.exists():
-        click.secho(f"Unable to training_config.toml: {
-                    project_path}", fg='red')
-        return
+        dataset_config_path = project_path / "dataset_config.toml"
+        training_config_path = project_path / "training_config.toml"
 
-    slurm = Slurm(
-        gres=['gpu:1'],
-        job_name=f'train-sdxl-{project}',
-        output=f'{
-            Path.cwd()}/logs/{Slurm.JOB_ARRAY_MASTER_ID}_{stringcase.spinalcase(project)}_{Slurm.JOB_ARRAY_ID}.out',
-    )
+        if not dataset_config_path.exists():
+            click.secho(f"Unable to dataset_config.toml: {
+                        project_path}", fg='red')
+            continue
 
-    slurm.add_cmd('source', f'{Path.cwd()}/venv/bin/activate')
+        if not training_config_path.exists():
+            click.secho(f"Unable to training_config.toml: {
+                project_path}", fg='red')
+            continue
 
-    slurm.add_cmd('accelerate', 'launch', '--quiet',
-                  f'--config_file={Path.cwd()}/accelerate_config.yaml',
-                  f'--num_cpu_threads_per_process=1',
-                  f'{Path.cwd()}/sd-scripts/sdxl_train_network.py',
-                  f'--dataset_config={project_path}/dataset_config.toml',
-                  f'--config_file={project_path}/training_config.toml'
-                  )
+        slurm = Slurm(
+            gres=['gpu:1'],
+            job_name=f'train-sdxl-{project}',
+            output=f'{
+                Path.cwd()}/logs/{Slurm.JOB_ARRAY_MASTER_ID}_{stringcase.spinalcase(project)}_{Slurm.JOB_ARRAY_ID}.out',
+        )
 
-    env = Env()
+        slurm.add_cmd('source', f'{Path.cwd()}/venv/bin/activate')
 
-    try:
-        lora_output_paths = env.list('LORA_TOOL_OUTPUT_PATHS')
+        slurm.add_cmd('accelerate', 'launch', '--quiet',
+                      f'--config_file={Path.cwd()}/accelerate_config.yaml',
+                      f'--num_cpu_threads_per_process=1',
+                      f'{Path.cwd()}/sd-scripts/sdxl_train_network.py',
+                      f'--dataset_config={project_path}/dataset_config.toml',
+                      f'--config_file={project_path}/training_config.toml'
+                      )
 
-        for path in lora_output_paths:
-            slurm.add_cmd(
-                'cp', '-uf', f'{project_path}/output/{project}.safetensors', path)
-    except:
-        click.secho('No ouput path specified. Skipped.', fg='red')
+        env = Env()
 
-    if dump:
-        click.echo(slurm)
-    else:
-        slurm.sbatch()
+        try:
+            lora_output_paths = env.list('LORA_TOOL_OUTPUT_PATHS')
+
+            for path in lora_output_paths:
+                slurm.add_cmd(
+                    'cp', '-uf', f'{project_path}/output/{project}.safetensors', path)
+        except:
+            click.secho('No ouput path specified. Skipped.', fg='yellow')
+
+        slurm.add_cmd('mv', f'{project_path}', f"{Path.cwd()}/finished")
+
+        if dump:
+            click.echo(slurm)
+        else:
+            slurm.sbatch()
 
 
 if __name__ == "__main__":

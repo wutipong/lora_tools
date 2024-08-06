@@ -4,4 +4,8 @@ workspace/*
 models/upscale/*
 models/tagger/*
 logs/*
+queue/*
+finished/*
+
+#keep this at the last line
 !**/.non_empty

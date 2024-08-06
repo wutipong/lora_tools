@@ -2,6 +2,7 @@ from pathlib import Path
 import click
 import cv2
 import mimetypes
+import shutil
 
 TRAINING_BATCH_SIZE = 2
 MAX_TRAINING_EPOCH = 10
@@ -129,6 +130,9 @@ logging_dir = "{project_path}/logs"
 
     dataset_config.close()
 
+    queue_project_path = Path.cwd() / "queue" / project
+
+    shutil.move(project_path, queue_project_path)
 
 if __name__ == "__main__":
     cli()
